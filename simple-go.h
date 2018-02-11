@@ -4,12 +4,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <assert.h>
+#include <string.h>
 
 #define BLACK 'b'
 #define WHITE 'w'
-#define EMPTY ' '
+#define EMPTY '.'
 #define GROUP '#'
 #define INVALID_FIELD '\0'
+#define COUNTED '+'
 
 typedef struct go_board
 {
@@ -25,8 +28,15 @@ typedef struct game_state
 
 
 go_board* create_board(size_t size);
+void delete_board(go_board* board);
 char get_board_at(go_board* board, size_t y, size_t x);
 void set_board_at(go_board* board, size_t y, size_t x, char item);
+void print_board(go_board* board);
+void find_group(go_board* board, go_board* overlay, size_t y, size_t x);
+size_t count_liberties(go_board* board, go_board* overlay);
+
+
+
 
 
 #endif //SIMPLE_GO_H
