@@ -28,11 +28,17 @@ typedef struct game_state
 
 
 go_board* create_board(size_t size);
-bool play_at(game_state* game, size_t y, size_t x);
-bool check_bounds(go_board* board, size_t y, size_t x);
 void delete_board(go_board* board);
+game_state* create_game(size_t size);
+void delete_game(game_state* game);
+
+bool check_bounds(go_board* board, size_t y, size_t x);
 char get_board_at(go_board* board, size_t y, size_t x);
 void set_board_at(go_board* board, size_t y, size_t x, char item);
+
+void kill_group(go_board* board, go_board* overlay);
+bool play_at(game_state* game, size_t y, size_t x);
+
 void print_board(go_board* board);
 void find_group(go_board* board, go_board* overlay, size_t y, size_t x);
 size_t count_liberties(go_board* board, go_board* overlay);

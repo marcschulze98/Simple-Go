@@ -1,7 +1,8 @@
 #include "simple-go.h"
 
-int main(int argc, char** argv)
+void test1(void)
 {
+	puts("test1 running");
 	go_board* test_board = create_board(5);
 
 	set_board_at(test_board, 2, 2, WHITE);
@@ -15,13 +16,50 @@ int main(int argc, char** argv)
 	print_board(test_board);
 	putchar('\n');
 
-	go_board* overlay = create_board(5);
-	find_group(test_board, overlay, 2, 2);
+	go_board* test_overlay = create_board(5);
+	find_group(test_board, test_overlay, 2, 2);
 
-	print_board(overlay);
+	print_board(test_overlay);
 
-	printf("liberties: %ld\n", count_liberties(test_board,overlay));
+	printf("liberties: %ld\n", count_liberties(test_board,test_overlay));
+
+	kill_group(test_board, test_overlay);
+
+	print_board(test_board);
+
 	delete_board(test_board);
-	delete_board(overlay);
+	delete_board(test_overlay);
+	puts("test1 finished");
+}
+
+void test2(void)
+{
+	puts("test2 running");
+	game_state* test_game = create_game(5);
+	go_board* test_board = test_game->board;
+	set_board_at(test_board, 2, 3, WHITE);
+	set_board_at(test_board, 3, 2, WHITE);
+	set_board_at(test_board, 1, 2, WHITE);
+	set_board_at(test_board, 2, 1, WHITE);
+
+	play_at(test_game, 2, 2);
+
+	print_board(test_game->board);
+
+	set_board_at(test_board, 2, 1, EMPTY);
+
+	play_at(test_game, 2, 2);
+
+	print_board(test_game->board);
+
+	delete_game(test_game);
+	puts("test2 finished");
+}
+
+
+int main(int argc, char** argv)
+{
+	test1();
+	test2();
 
 }

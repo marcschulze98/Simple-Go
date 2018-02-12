@@ -3,7 +3,9 @@
 go_board* create_board(size_t size)
 {
 	go_board* board = malloc(sizeof(*board));
+	assert(board);
 	board->field_array = malloc(size*size*sizeof(*board->field_array));
+	assert(board->field_array);
 	for(size_t i = 0; i < size*size; i++)
 	{
 		board->field_array[i] = EMPTY;
@@ -13,18 +15,45 @@ go_board* create_board(size_t size)
 	return board;
 }
 
+void delete_board(go_board* board)
+{
+	free(board->field_array);
+	free(board);
+}
+
+game_state* create_game(size_t size)
+{
+	game_state* game = malloc(sizeof(*game));
+	game->board = create_board(size);
+	game->black_turn = true;
+
+	return game;
+}
+
+void delete_game(game_state* game)
+{
+	delete_board(game->board);
+	free(game);
+}
+
 bool check_bounds(go_board* board, size_t y, size_t x)
 {
-	if(y >= 0  && x >= 0 && y < board->size && x < board->size)
+	if(y < board->size && x < board->size)
 		return true;
 	else
 		return false;
 }
 
-void delete_board(go_board* board)
+void kill_group(go_board* board, go_board* overlay)
 {
-	free(board->field_array);
-	free(board);
+	for(size_t y = 0; y < board->size; y++)
+	{
+		for(size_t x = 0; x < board->size; x++)
+		{
+			if(get_board_at(overlay, y, x) == GROUP)
+				set_board_at(board, y, x, EMPTY);
+		}
+	}
 }
 
 void print_board(go_board* board)
@@ -67,7 +96,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 				delete_board(enemy_group);
 				return false;
 			} else {
-				//TODO: kill_group();
+				kill_group(game->board, enemy_group);
 			}
 		}
 		if(get_board_at(game->board, y, x-1) == (game->black_turn ? WHITE : BLACK))
@@ -79,7 +108,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 				delete_board(enemy_group);
 				return false;
 			} else {
-				//kill_group();
+				kill_group(game->board, enemy_group);
 			}
 		}
 		if(get_board_at(game->board, y+1, x) == (game->black_turn ? WHITE : BLACK))
@@ -91,7 +120,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 				delete_board(enemy_group);
 				return false;
 			} else {
-				//kill_group();
+				kill_group(game->board, enemy_group);
 			}
 		}
 		if(get_board_at(game->board, y, x+1) == (game->black_turn ? WHITE : BLACK))
@@ -103,7 +132,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 				delete_board(enemy_group);
 				return false;
 			} else {
-				//kill_group();
+				kill_group(game->board, enemy_group);
 			}
 		}
 	//TODO: ...or if it connects to own group that has liberties left
