@@ -22,12 +22,14 @@ typedef struct go_board
 
 typedef struct game_state
 {
-	struct go_board* board;
+	go_board* board;
 	bool black_turn;
 } game_state;
 
 
 go_board* create_board(size_t size);
+bool play_at(game_state* game, size_t y, size_t x);
+bool check_bounds(go_board* board, size_t y, size_t x);
 void delete_board(go_board* board);
 char get_board_at(go_board* board, size_t y, size_t x);
 void set_board_at(go_board* board, size_t y, size_t x, char item);
