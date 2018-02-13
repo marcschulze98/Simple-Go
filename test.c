@@ -43,13 +43,15 @@ void test2(void)
 	set_board_at(test_board, 2, 1, WHITE);
 
 	play_at(test_game, 2, 2);
-
 	print_board(test_game->board);
 
 	set_board_at(test_board, 2, 1, EMPTY);
 
 	play_at(test_game, 2, 2);
+	print_board(test_game->board);
 
+
+	play_at(test_game, 2, 1);
 	print_board(test_game->board);
 
 	delete_game(test_game);

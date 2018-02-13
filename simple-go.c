@@ -79,64 +79,93 @@ bool play_at(game_state* game, size_t y, size_t x)
 	if(get_board_at(game->board, y, x) != EMPTY)
 		return false;
 
-	//check if placement could lead to suicide
-	if(get_board_at(game->board, y-1, x) != EMPTY &&
-	   get_board_at(game->board, y, x-1) != EMPTY &&
-	   get_board_at(game->board, y+1, x) != EMPTY &&
-	   get_board_at(game->board, y, x+1) != EMPTY)
-	//if so, check if placement kills a surrounding group
-	{
-		if(get_board_at(game->board, y-1, x) == (game->black_turn ? WHITE : BLACK))
-		{
+	bool can_place = false;
 
-			go_board* enemy_group = create_board(game->board->size);
-			find_group(game->board, enemy_group, y-1, x);
-			if(count_liberties(game->board, enemy_group) > 1)
-			{
-				delete_board(enemy_group);
-				return false;
-			} else {
-				kill_group(game->board, enemy_group);
-			}
-		}
-		if(get_board_at(game->board, y, x-1) == (game->black_turn ? WHITE : BLACK))
+	char up = get_board_at(game->board, y-1, x);
+	char left = get_board_at(game->board, y, x-1);
+	char down = get_board_at(game->board, y+1, x);
+	char right = get_board_at(game->board, y, x+1);
+
+	//first check for group to kill, then for empty field, and last for group woth liberties
+	if(up == (game->black_turn ? WHITE : BLACK))
+	{
+		go_board* enemy_group = create_board(game->board->size);
+		find_group(game->board, enemy_group, y-1, x);
+		if(count_liberties(game->board, enemy_group) <= 1)
 		{
-			go_board* enemy_group = create_board(game->board->size);
-			find_group(game->board, enemy_group, y, x-1);
-			if(count_liberties(game->board, enemy_group) > 1)
-			{
-				delete_board(enemy_group);
-				return false;
-			} else {
-				kill_group(game->board, enemy_group);
-			}
+			kill_group(game->board, enemy_group);
+			can_place = true;
 		}
-		if(get_board_at(game->board, y+1, x) == (game->black_turn ? WHITE : BLACK))
-		{
-			go_board* enemy_group = create_board(game->board->size);
-			find_group(game->board, enemy_group, y+1, x);
-			if(count_liberties(game->board, enemy_group) > 1)
-			{
-				delete_board(enemy_group);
-				return false;
-			} else {
-				kill_group(game->board, enemy_group);
-			}
-		}
-		if(get_board_at(game->board, y, x+1) == (game->black_turn ? WHITE : BLACK))
-		{
-			go_board* enemy_group = create_board(game->board->size);
-			find_group(game->board, enemy_group, y, x+1);
-			if(count_liberties(game->board, enemy_group) > 1)
-			{
-				delete_board(enemy_group);
-				return false;
-			} else {
-				kill_group(game->board, enemy_group);
-			}
-		}
-	//TODO: ...or if it connects to own group that has liberties left
+		delete_board(enemy_group);
+	} else if(up == EMPTY) {
+		can_place = true;
+	} else {
+		go_board* friendly_group = create_board(game->board->size);
+		find_group(game->board, friendly_group, y-1, x);
+		if(count_liberties(game->board, friendly_group) > 1)
+			can_place = true;
+		delete_board(friendly_group);
 	}
+
+	if(left == (game->black_turn ? WHITE : BLACK))
+	{
+		go_board* enemy_group = create_board(game->board->size);
+		find_group(game->board, enemy_group, y, x-1);
+		if(count_liberties(game->board, enemy_group) <= 1)
+		{
+			kill_group(game->board, enemy_group);
+			can_place = true;
+		}
+	} else if(left == EMPTY) {
+		can_place = true;
+	} else {
+		go_board* friendly_group = create_board(game->board->size);
+		find_group(game->board, friendly_group, y, x-1);
+		if(count_liberties(game->board, friendly_group) > 1)
+			can_place = true;
+		delete_board(friendly_group);
+	}
+
+	if(down == (game->black_turn ? WHITE : BLACK))
+	{
+		go_board* enemy_group = create_board(game->board->size);
+		find_group(game->board, enemy_group, y+1, x);
+		if(count_liberties(game->board, enemy_group) <= 1)
+		{
+			kill_group(game->board, enemy_group);
+			can_place = true;
+		}
+	} else if(down == EMPTY) {
+		can_place = true;
+	} else {
+		go_board* friendly_group = create_board(game->board->size);
+		find_group(game->board, friendly_group, y+1, x);
+		if(count_liberties(game->board, friendly_group) > 1)
+			can_place = true;
+		delete_board(friendly_group);
+	}
+
+	if(right == (game->black_turn ? WHITE : BLACK))
+	{
+		go_board* enemy_group = create_board(game->board->size);
+		find_group(game->board, enemy_group, y, x+1);
+		if(count_liberties(game->board, enemy_group) <= 1)
+		{
+			kill_group(game->board, enemy_group);
+			can_place = true;
+		}
+	} else if(right == EMPTY) {
+		can_place = true;
+	} else {
+		go_board* friendly_group = create_board(game->board->size);
+		find_group(game->board, friendly_group, y, x+1);
+		if(count_liberties(game->board, friendly_group) > 1)
+			can_place = true;
+		delete_board(friendly_group);
+	}
+
+	if(!can_place)
+		return false;
 
 	set_board_at(game->board, y, x, game->black_turn ? BLACK : WHITE);
 	game->black_turn = !game->black_turn;
