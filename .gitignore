@@ -1,6 +1,13 @@
 # Binaries
 test
 
+#cutils files
+cutils.h
+cutils_endian.h
+dyn_string.h
+libcutils.so
+vector.h
+
 # Prerequisites
 *.d
 

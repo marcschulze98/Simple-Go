@@ -1,4 +1,5 @@
 #include "simple-go.h"
+#include "simple-gtp.h"
 
 void test1(void)
 {
@@ -35,12 +36,13 @@ void test1(void)
 void test2(void)
 {
 	puts("test2 running");
-	game_state* test_game = create_game(5);
+	game_state* test_game = create_game(5, 0);
 	go_board* test_board = test_game->board;
 	set_board_at(test_board, 2, 3, WHITE);
 	set_board_at(test_board, 3, 2, WHITE);
 	set_board_at(test_board, 1, 2, WHITE);
 	set_board_at(test_board, 2, 1, WHITE);
+	set_board_at(test_board, 1, 1, BLACK);
 
 	play_at(test_game, 2, 2);
 	print_board(test_game->board);
@@ -58,10 +60,27 @@ void test2(void)
 	puts("test2 finished");
 }
 
+void test3(void)
+{
+	puts("test2 running");
+
+	game_state* test_game = create_game(11, 0);
+
+	char* ret =handle_gtp_cmd("play white a9", test_game);
+	printf("%s\n", ret);
+	print_board(test_game->board);
+
+	free(ret);
+	delete_game(test_game);
+
+	puts("test2 finished");
+}
+
 
 int main(int argc, char** argv)
 {
 	test1();
 	test2();
+	test3();
 
 }

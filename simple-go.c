@@ -1,12 +1,12 @@
 #include "simple-go.h"
 
-go_board* create_board(size_t size)
+go_board* create_board(unsigned int size)
 {
 	go_board* board = malloc(sizeof(*board));
 	assert(board);
 	board->field_array = malloc(size*size*sizeof(*board->field_array));
 	assert(board->field_array);
-	for(size_t i = 0; i < size*size; i++)
+	for(unsigned int i = 0; i < size*size; i++)
 	{
 		board->field_array[i] = EMPTY;
 	}
@@ -21,11 +21,12 @@ void delete_board(go_board* board)
 	free(board);
 }
 
-game_state* create_game(size_t size)
+game_state* create_game(unsigned int size, float komi)
 {
 	game_state* game = malloc(sizeof(*game));
 	game->board = create_board(size);
 	game->black_turn = true;
+	game->komi = komi;
 
 	return game;
 }
@@ -36,7 +37,7 @@ void delete_game(game_state* game)
 	free(game);
 }
 
-bool check_bounds(go_board* board, size_t y, size_t x)
+bool check_bounds(go_board* board, unsigned int y, unsigned int x)
 {
 	if(y < board->size && x < board->size)
 		return true;
@@ -46,9 +47,9 @@ bool check_bounds(go_board* board, size_t y, size_t x)
 
 void kill_group(go_board* board, go_board* overlay)
 {
-	for(size_t y = 0; y < board->size; y++)
+	for(unsigned int y = 0; y < board->size; y++)
 	{
-		for(size_t x = 0; x < board->size; x++)
+		for(unsigned int x = 0; x < board->size; x++)
 		{
 			if(get_board_at(overlay, y, x) == GROUP)
 				set_board_at(board, y, x, EMPTY);
@@ -58,9 +59,9 @@ void kill_group(go_board* board, go_board* overlay)
 
 void print_board(go_board* board)
 {
-	for(size_t y = 0; y < board->size; y++)
+	for(unsigned int y = 0; y < board->size; y++)
 	{
-		for(size_t x = 0; x < board->size; x++)
+		for(unsigned int x = 0; x < board->size; x++)
 		{
 			putchar(get_board_at(board,y,x));
 			putchar(' ');
@@ -69,7 +70,7 @@ void print_board(go_board* board)
 	}
 }
 
-bool play_at(game_state* game, size_t y, size_t x)
+bool play_at(game_state* game, unsigned int y, unsigned int x)
 {
 	//check out-of-bounds
 	if(!check_bounds(game->board, y, x))
@@ -116,6 +117,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 			kill_group(game->board, enemy_group);
 			can_place = true;
 		}
+		delete_board(enemy_group);
 	} else if(left == EMPTY) {
 		can_place = true;
 	} else {
@@ -135,6 +137,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 			kill_group(game->board, enemy_group);
 			can_place = true;
 		}
+		delete_board(enemy_group);
 	} else if(down == EMPTY) {
 		can_place = true;
 	} else {
@@ -154,6 +157,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 			kill_group(game->board, enemy_group);
 			can_place = true;
 		}
+		delete_board(enemy_group);
 	} else if(right == EMPTY) {
 		can_place = true;
 	} else {
@@ -172,7 +176,7 @@ bool play_at(game_state* game, size_t y, size_t x)
 	return true;
 }
 
-char get_board_at(go_board* board, size_t y, size_t x)
+char get_board_at(go_board* board, unsigned int y, unsigned int x)
 {
 	if(check_bounds(board, y, x))
 		return board->field_array[y*board->size+x];
@@ -180,45 +184,46 @@ char get_board_at(go_board* board, size_t y, size_t x)
 		return INVALID_FIELD;
 }
 
-void set_board_at(go_board* board, size_t y, size_t x, char item)
+void set_board_at(go_board* board, unsigned int y, unsigned int x, char item)
 {
 	if(check_bounds(board,y,x))
 		board->field_array[y*board->size+x] = item;
 }
 
-void find_group(go_board* board, go_board* overlay, size_t y, size_t x)
+void find_group(go_board* board, go_board* overlay, unsigned int y, unsigned int x)
 {
 	assert(board->size == overlay->size);
-	assert(check_bounds(board, y, x));
+	if(check_bounds(board, y, x))
+	{
+		set_board_at(overlay, y, x, GROUP);
+		char field = get_board_at(board,y,x);
 
-	set_board_at(overlay, y, x, GROUP);
-	char field = get_board_at(board,y,x);
+		if(get_board_at(board,y-1,x) == field && get_board_at(overlay,y-1,x) == EMPTY)
+			find_group(board, overlay, y-1, x);
 
-	if(get_board_at(board,y-1,x) == field && get_board_at(overlay,y-1,x) == EMPTY)
-		find_group(board, overlay, y-1, x);
+		if(get_board_at(board,y,x-1) == field && get_board_at(overlay,y,x-1) == EMPTY)
+			find_group(board, overlay, y, x-1);
 
-	if(get_board_at(board,y,x-1) == field && get_board_at(overlay,y,x-1) == EMPTY)
-		find_group(board, overlay, y, x-1);
+		if(get_board_at(board,y+1,x) == field && get_board_at(overlay,y+1,x) == EMPTY)
+			find_group(board, overlay, y+1, x);
 
-	if(get_board_at(board,y+1,x) == field && get_board_at(overlay,y+1,x) == EMPTY)
-		find_group(board, overlay, y+1, x);
-
-	if(get_board_at(board,y,x+1) == field && get_board_at(overlay,y,x+1) == EMPTY)
-		find_group(board, overlay, y, x+1);
+		if(get_board_at(board,y,x+1) == field && get_board_at(overlay,y,x+1) == EMPTY)
+			find_group(board, overlay, y, x+1);
+	}
 }
 
-size_t count_liberties(go_board* board, go_board* overlay)
+unsigned long count_liberties(go_board* board, go_board* overlay)
 {
 	assert(board->size == overlay->size);
 
 	go_board* tmpoverlay = create_board(board->size);
 	memcpy(tmpoverlay->field_array, overlay->field_array, board->size*board->size);
 
-	size_t liberties = 0;
+	unsigned long liberties = 0;
 
-	for(size_t y = 0; y < board->size; y++)
+	for(unsigned int y = 0; y < board->size; y++)
 	{
-		for(size_t x = 0; x < board->size; x++)
+		for(unsigned int x = 0; x < board->size; x++)
 		{
 			if(get_board_at(overlay, y, x) == GROUP)
 			{

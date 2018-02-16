@@ -17,31 +17,32 @@
 typedef struct go_board
 {
 	char* field_array;
-	size_t size;
+	unsigned int size;
 } go_board;
 
 typedef struct game_state
 {
 	go_board* board;
+	float komi;
 	bool black_turn;
 } game_state;
 
 
-go_board* create_board(size_t size);
+go_board* create_board(unsigned int size);
 void delete_board(go_board* board);
-game_state* create_game(size_t size);
+game_state* create_game(unsigned int size, float komi);
 void delete_game(game_state* game);
 
-bool check_bounds(go_board* board, size_t y, size_t x);
-char get_board_at(go_board* board, size_t y, size_t x);
-void set_board_at(go_board* board, size_t y, size_t x, char item);
+bool check_bounds(go_board* board, unsigned int y, unsigned int x);
+char get_board_at(go_board* board, unsigned int y, unsigned int x);
+void set_board_at(go_board* board, unsigned int y, unsigned int x, char item);
 
 void kill_group(go_board* board, go_board* overlay);
-bool play_at(game_state* game, size_t y, size_t x);
+bool play_at(game_state* game, unsigned int y, unsigned int x);
 
 void print_board(go_board* board);
-void find_group(go_board* board, go_board* overlay, size_t y, size_t x);
-size_t count_liberties(go_board* board, go_board* overlay);
+void find_group(go_board* board, go_board* overlay, unsigned int y, unsigned int x);
+unsigned long count_liberties(go_board* board, go_board* overlay);
 
 
 
