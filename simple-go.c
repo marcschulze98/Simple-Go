@@ -1,12 +1,12 @@
 #include "simple-go.h"
 
-go_board* create_board(unsigned int size)
+go_board* create_board(go_coordinate size)
 {
 	go_board* board = malloc(sizeof(*board));
 	assert(board);
 	board->field_array = malloc(size*size*sizeof(*board->field_array));
 	assert(board->field_array);
-	for(unsigned int i = 0; i < size*size; i++)
+	for(go_coordinate i = 0; i < size*size; i++)
 	{
 		board->field_array[i] = EMPTY;
 	}
@@ -21,7 +21,7 @@ void delete_board(go_board* board)
 	free(board);
 }
 
-game_state* create_game(unsigned int size, float komi)
+game_state* create_game(go_coordinate size, float komi)
 {
 	game_state* game = malloc(sizeof(*game));
 	game->board = create_board(size);
@@ -37,7 +37,7 @@ void delete_game(game_state* game)
 	free(game);
 }
 
-bool check_bounds(go_board* board, unsigned int y, unsigned int x)
+bool check_bounds(const go_board* board, go_coordinate y, go_coordinate x)
 {
 	if(y < board->size && x < board->size)
 		return true;
@@ -47,9 +47,9 @@ bool check_bounds(go_board* board, unsigned int y, unsigned int x)
 
 void kill_group(go_board* board, go_board* overlay)
 {
-	for(unsigned int y = 0; y < board->size; y++)
+	for(go_coordinate y = 0; y < board->size; y++)
 	{
-		for(unsigned int x = 0; x < board->size; x++)
+		for(go_coordinate x = 0; x < board->size; x++)
 		{
 			if(get_board_at(overlay, y, x) == GROUP)
 				set_board_at(board, y, x, EMPTY);
@@ -59,9 +59,9 @@ void kill_group(go_board* board, go_board* overlay)
 
 void print_board(go_board* board)
 {
-	for(unsigned int y = 0; y < board->size; y++)
+	for(go_coordinate y = 0; y < board->size; y++)
 	{
-		for(unsigned int x = 0; x < board->size; x++)
+		for(go_coordinate x = 0; x < board->size; x++)
 		{
 			putchar(get_board_at(board,y,x));
 			putchar(' ');
@@ -70,7 +70,38 @@ void print_board(go_board* board)
 	}
 }
 
-bool play_at(game_state* game, unsigned int y, unsigned int x)
+
+
+bool group_attachable(const game_state* game, go_coordinate y, go_coordinate x)
+{
+	go_board* friendly_group = create_board(game->board->size);
+	find_group(game->board, friendly_group, y, x);
+	if(count_liberties(game->board, friendly_group) > 1)
+	{
+		delete_board(friendly_group);
+		return true;
+	} else {
+		delete_board(friendly_group);
+		return false;
+	}
+}
+
+bool group_killable(game_state* game, go_coordinate y, go_coordinate x)
+{
+	go_board* enemy_group = create_board(game->board->size);
+	find_group(game->board, enemy_group, y, x);
+	if(count_liberties(game->board, enemy_group) <= 1)
+	{
+		kill_group(game->board, enemy_group);
+		delete_board(enemy_group);
+		return true;
+	} else {
+		delete_board(enemy_group);
+		return false;
+	}
+}
+
+bool play_at(game_state* game, go_coordinate y, go_coordinate x)
 {
 	//check out-of-bounds
 	if(!check_bounds(game->board, y, x))
@@ -82,91 +113,43 @@ bool play_at(game_state* game, unsigned int y, unsigned int x)
 
 	bool can_place = false;
 
-	char up = get_board_at(game->board, y-1, x);
-	char left = get_board_at(game->board, y, x-1);
-	char down = get_board_at(game->board, y+1, x);
-	char right = get_board_at(game->board, y, x+1);
+	go_symbol enemy = game->black_turn ? WHITE : BLACK;
+	go_symbol friendly = game->black_turn ? BLACK : WHITE;
 
-	//first check for group to kill, then for empty field, and last for group woth liberties
-	if(up == (game->black_turn ? WHITE : BLACK))
-	{
-		go_board* enemy_group = create_board(game->board->size);
-		find_group(game->board, enemy_group, y-1, x);
-		if(count_liberties(game->board, enemy_group) <= 1)
-		{
-			kill_group(game->board, enemy_group);
-			can_place = true;
-		}
-		delete_board(enemy_group);
-	} else if(up == EMPTY) {
-		can_place = true;
-	} else {
-		go_board* friendly_group = create_board(game->board->size);
-		find_group(game->board, friendly_group, y-1, x);
-		if(count_liberties(game->board, friendly_group) > 1)
-			can_place = true;
-		delete_board(friendly_group);
-	}
+	go_symbol up = y == 0 ? INVALID_FIELD : get_board_at(game->board, y-1, x);
+	go_symbol left = x == 0 ? INVALID_FIELD : get_board_at(game->board, y, x-1);
+	go_symbol down = y == game->board->size-1 ? INVALID_FIELD : get_board_at(game->board, y+1, x);
+	go_symbol right = x == game->board->size-1 ? INVALID_FIELD : get_board_at(game->board, y, x+1);
 
-	if(left == (game->black_turn ? WHITE : BLACK))
-	{
-		go_board* enemy_group = create_board(game->board->size);
-		find_group(game->board, enemy_group, y, x-1);
-		if(count_liberties(game->board, enemy_group) <= 1)
-		{
-			kill_group(game->board, enemy_group);
-			can_place = true;
-		}
-		delete_board(enemy_group);
-	} else if(left == EMPTY) {
-		can_place = true;
-	} else {
-		go_board* friendly_group = create_board(game->board->size);
-		find_group(game->board, friendly_group, y, x-1);
-		if(count_liberties(game->board, friendly_group) > 1)
-			can_place = true;
-		delete_board(friendly_group);
-	}
+	//first check for group to kill, then for empty field, and last for group with liberties
 
-	if(down == (game->black_turn ? WHITE : BLACK))
-	{
-		go_board* enemy_group = create_board(game->board->size);
-		find_group(game->board, enemy_group, y+1, x);
-		if(count_liberties(game->board, enemy_group) <= 1)
-		{
-			kill_group(game->board, enemy_group);
-			can_place = true;
-		}
-		delete_board(enemy_group);
-	} else if(down == EMPTY) {
+	if(up == enemy && group_killable(game, y-1, x))
 		can_place = true;
-	} else {
-		go_board* friendly_group = create_board(game->board->size);
-		find_group(game->board, friendly_group, y+1, x);
-		if(count_liberties(game->board, friendly_group) > 1)
-			can_place = true;
-		delete_board(friendly_group);
-	}
+	else if(up == EMPTY)
+		can_place = true;
+	else if(up == friendly && group_attachable(game, y-1, x))
+		can_place = true;
 
-	if(right == (game->black_turn ? WHITE : BLACK))
-	{
-		go_board* enemy_group = create_board(game->board->size);
-		find_group(game->board, enemy_group, y, x+1);
-		if(count_liberties(game->board, enemy_group) <= 1)
-		{
-			kill_group(game->board, enemy_group);
-			can_place = true;
-		}
-		delete_board(enemy_group);
-	} else if(right == EMPTY) {
+	if(left == enemy && group_killable(game, y, x-1))
 		can_place = true;
-	} else {
-		go_board* friendly_group = create_board(game->board->size);
-		find_group(game->board, friendly_group, y, x+1);
-		if(count_liberties(game->board, friendly_group) > 1)
-			can_place = true;
-		delete_board(friendly_group);
-	}
+	else if(left == EMPTY)
+		can_place = true;
+	else if(up == friendly && group_attachable(game, y, x-1))
+		can_place = true;
+
+	if(down == enemy && group_killable(game, y+1, x))
+		can_place = true;
+	else if(down == EMPTY)
+		can_place = true;
+	else if(up == friendly && group_attachable(game, y+1, x))
+		can_place = true;
+
+	if(right == enemy && group_killable(game, y, x+1))
+		can_place = true;
+	else if(right == EMPTY)
+		can_place = true;
+	else if(up == friendly && group_attachable(game, y, x+1))
+		can_place = true;
 
 	if(!can_place)
 		return false;
@@ -176,7 +159,7 @@ bool play_at(game_state* game, unsigned int y, unsigned int x)
 	return true;
 }
 
-char get_board_at(go_board* board, unsigned int y, unsigned int x)
+go_symbol get_board_at(const go_board* board, go_coordinate y, go_coordinate x)
 {
 	if(check_bounds(board, y, x))
 		return board->field_array[y*board->size+x];
@@ -184,19 +167,19 @@ char get_board_at(go_board* board, unsigned int y, unsigned int x)
 		return INVALID_FIELD;
 }
 
-void set_board_at(go_board* board, unsigned int y, unsigned int x, char item)
+void set_board_at(go_board* board, go_coordinate y, go_coordinate x, go_symbol item)
 {
 	if(check_bounds(board,y,x))
 		board->field_array[y*board->size+x] = item;
 }
 
-void find_group(go_board* board, go_board* overlay, unsigned int y, unsigned int x)
+void find_group(const go_board* board, go_board* overlay, go_coordinate y, go_coordinate x)
 {
 	assert(board->size == overlay->size);
 	if(check_bounds(board, y, x))
 	{
 		set_board_at(overlay, y, x, GROUP);
-		char field = get_board_at(board,y,x);
+		go_symbol field = get_board_at(board,y,x);
 
 		if(get_board_at(board,y-1,x) == field && get_board_at(overlay,y-1,x) == EMPTY)
 			find_group(board, overlay, y-1, x);
@@ -221,9 +204,9 @@ unsigned long count_liberties(go_board* board, go_board* overlay)
 
 	unsigned long liberties = 0;
 
-	for(unsigned int y = 0; y < board->size; y++)
+	for(go_coordinate y = 0; y < board->size; y++)
 	{
-		for(unsigned int x = 0; x < board->size; x++)
+		for(go_coordinate x = 0; x < board->size; x++)
 		{
 			if(get_board_at(overlay, y, x) == GROUP)
 			{

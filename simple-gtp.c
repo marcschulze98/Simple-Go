@@ -48,6 +48,9 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 		current = strtok(NULL, " ");
 	}
 
+	if(arguments->length > 1)
+		vector_remove(arguments,0,free);
+
 	char* (*func_ptr)(const char*) = cmd_error;
 	const char* func_args = "unknown command";
 
@@ -139,8 +142,7 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 	}
 
 	free(command);
-	delete_vector(arguments, NULL);
-	free(arguments);
+	delete_vector(arguments, free);
 	free(tmp_msg);
 
 	return func_ptr(func_args);

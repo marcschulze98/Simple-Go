@@ -68,9 +68,10 @@ void test3(void)
 
 	char* ret =handle_gtp_cmd("play white a9", test_game);
 	printf("%s\n", ret);
+	free(ret);
 	print_board(test_game->board);
 
-	free(ret);
+
 	delete_game(test_game);
 
 	puts("test2 finished");
