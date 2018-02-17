@@ -62,19 +62,76 @@ void test2(void)
 
 void test3(void)
 {
-	puts("test2 running");
+	puts("test3 running");
 
 	game_state* test_game = create_game(11, 0);
 
-	char* ret =handle_gtp_cmd("play white a9", test_game);
+	char* ret =handle_gtp_cmd("play white a 10", test_game);
 	printf("%s\n", ret);
 	free(ret);
+	print_board(test_game->board);
+
+	ret =handle_gtp_cmd("version", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("komi -6.5", test_game);
+	printf("%s\n", ret);
+	printf("%f\n", test_game->komi);
+	free(ret);
+
+	ret =handle_gtp_cmd("protocol_version", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("known_command play", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("known_command what", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("list_commands", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("1clear_board", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("2boardsize 26", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
+	ret =handle_gtp_cmd("genmove", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
 	print_board(test_game->board);
 
 
 	delete_game(test_game);
 
-	puts("test2 finished");
+	puts("test3 finished");
+}
+
+void test4(void)
+{
+	puts("test4 running");
+
+	game_state* test_game = create_game(19, 6.5);
+	go_board* test_board = test_game->board;
+	set_board_at(test_board, 2, 3, WHITE);
+	set_board_at(test_board, 2, 5, WHITE);
+	set_board_at(test_board, 1, 4, WHITE);
+	set_board_at(test_board, 3, 4, BLACK);
+	play_at(test_game, 2,4);
+
+	print_board(test_game->board);
+
+	delete_game(test_game);
+	puts("test4 finished");
 }
 
 
@@ -83,5 +140,6 @@ int main(int argc, char** argv)
 	test1();
 	test2();
 	test3();
+	test4();
 
 }

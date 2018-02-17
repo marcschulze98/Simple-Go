@@ -134,21 +134,21 @@ bool play_at(game_state* game, go_coordinate y, go_coordinate x)
 		can_place = true;
 	else if(left == EMPTY)
 		can_place = true;
-	else if(up == friendly && group_attachable(game, y, x-1))
+	else if(left == friendly && group_attachable(game, y, x-1))
 		can_place = true;
 
 	if(down == enemy && group_killable(game, y+1, x))
 		can_place = true;
 	else if(down == EMPTY)
 		can_place = true;
-	else if(up == friendly && group_attachable(game, y+1, x))
+	else if(down == friendly && group_attachable(game, y+1, x))
 		can_place = true;
 
 	if(right == enemy && group_killable(game, y, x+1))
 		can_place = true;
 	else if(right == EMPTY)
 		can_place = true;
-	else if(up == friendly && group_attachable(game, y, x+1))
+	else if(right == friendly && group_attachable(game, y, x+1))
 		can_place = true;
 
 	if(!can_place)
