@@ -1,4 +1,4 @@
-#include "simple-go.h"
+#include <simple-go/simple-go.h>
 
 go_board* create_board(go_coordinate size)
 {
@@ -70,6 +70,49 @@ void print_board(go_board* board)
 	}
 }
 
+char* board_to_string(go_board* board)
+{
+	size_t str_size = (board->size*2+6)*(board->size+2)+2;
+	char* ret = calloc(str_size+1,1);
+	unsigned int index = 0;
+	unsigned int board_index = 0;
+	ret[index++] = '\n';
+
+	for(unsigned int i = 0; i < board->size+2; i++)
+	{
+		if(i == 0 || i == board->size+1)
+		{
+			ret[index++] = ' ';
+			ret[index++] = ' ';
+			ret[index++] = ' ';
+
+			char current_char = 'A';
+			for(unsigned int j = 0; j < board->size; j++)
+			{
+				ret[index++] = (char)(current_char == 'I' ? current_char++, current_char++ : current_char++);
+				ret[index++] = ' ';
+			}
+
+			ret[index++] = ' ';
+			ret[index++] = ' ';
+		} else {
+			index += (unsigned int)sprintf(ret+index, "%2u", (unsigned int)(board->size+1-i));
+			ret[index++] = ' ';
+			for(unsigned int j = 0; j < board->size; j++)
+			{
+				ret[index++] = board->field_array[board_index++];
+				ret[index++] = ' ';
+			}
+			index += (unsigned int)sprintf(ret+index, "%-2u", (unsigned int)(board->size+1-i));
+		}
+		ret[index++] = '\n';
+	}
+
+
+
+	return ret;
+
+}
 
 
 bool group_attachable(const game_state* game, go_coordinate y, go_coordinate x)
@@ -101,7 +144,7 @@ bool group_killable(game_state* game, go_coordinate y, go_coordinate x)
 	}
 }
 
-bool play_at(game_state* game, go_coordinate y, go_coordinate x)
+bool play_at(game_state* game, go_coordinate y, go_coordinate x, go_symbol color)
 {
 	//check out-of-bounds
 	if(!check_bounds(game->board, y, x))
@@ -113,13 +156,13 @@ bool play_at(game_state* game, go_coordinate y, go_coordinate x)
 
 	bool can_place = false;
 
-	go_symbol enemy = game->black_turn ? WHITE : BLACK;
-	go_symbol friendly = game->black_turn ? BLACK : WHITE;
+	go_symbol enemy = color == NO_FIELD ? (game->black_turn ? WHITE : BLACK) : (color == BLACK ? WHITE : BLACK);
+	go_symbol friendly = color == NO_FIELD ? (game->black_turn ? BLACK : WHITE) : (color == BLACK ? BLACK : WHITE);
 
-	go_symbol up = y == 0 ? INVALID_FIELD : get_board_at(game->board, y-1, x);
-	go_symbol left = x == 0 ? INVALID_FIELD : get_board_at(game->board, y, x-1);
-	go_symbol down = y == game->board->size-1 ? INVALID_FIELD : get_board_at(game->board, y+1, x);
-	go_symbol right = x == game->board->size-1 ? INVALID_FIELD : get_board_at(game->board, y, x+1);
+	go_symbol up = y == 0 ? NO_FIELD : get_board_at(game->board, y-1, x);
+	go_symbol left = x == 0 ? NO_FIELD : get_board_at(game->board, y, x-1);
+	go_symbol down = y == game->board->size-1 ? NO_FIELD : get_board_at(game->board, y+1, x);
+	go_symbol right = x == game->board->size-1 ? NO_FIELD : get_board_at(game->board, y, x+1);
 
 	//first check for group to kill, then for empty field, and last for group with liberties
 
@@ -154,7 +197,7 @@ bool play_at(game_state* game, go_coordinate y, go_coordinate x)
 	if(!can_place)
 		return false;
 
-	set_board_at(game->board, y, x, game->black_turn ? BLACK : WHITE);
+	set_board_at(game->board, y, x, friendly);
 	game->black_turn = !game->black_turn;
 	return true;
 }
@@ -164,7 +207,7 @@ go_symbol get_board_at(const go_board* board, go_coordinate y, go_coordinate x)
 	if(check_bounds(board, y, x))
 		return board->field_array[y*board->size+x];
 	else
-		return INVALID_FIELD;
+		return NO_FIELD;
 }
 
 void set_board_at(go_board* board, go_coordinate y, go_coordinate x, go_symbol item)

@@ -1,4 +1,4 @@
-#include "simple-gtp.h"
+#include <simple-go/simple-gtp.h>
 
 typedef struct msg_formatted
 {
@@ -156,18 +156,18 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 		game->board = create_board(size);
 	} else if(strcmp(command, "play") == 0) {
 		char* color = malloc(6);
-		char y;
-		int x;
+		char x;
+		int y;
 		if((arguments->length == 2 || arguments->length == 3) && //either its "a 10" or "a10"
 		   (snprintf(color, 6, "%s", (char*)vector_at(arguments,0)) > 0) && //"white" and "black" are only 6 chars
 		   (strcmp(color, "white") == 0 || strcmp(color, "black") == 0) && // check color
-		   (sscanf(vector_at(arguments,1), "%c", &y) > 0) && //get vertical coordinate
-		   ((unsigned char)(tolower(y) - 'a') < game->board->size) && // check range
-		   ((sscanf((char*)vector_at(arguments,1)+1, "%d", &x) > 0) || // get horizontal coordinate if no space between
-		   ((arguments->length == 3) && (sscanf((char*)vector_at(arguments,2), "%d", &x) > 0))) && // get horizontal coordinate if space between
-		   ((unsigned int)x <= game->board->size) && ((unsigned int)x > 0)) // check range
+		   (sscanf(vector_at(arguments,1), "%c", &x) > 0) && // get horizontal coordinate
+		   ((unsigned char)(tolower(x) - 'a') < game->board->size) && // check range
+		   ((sscanf((char*)vector_at(arguments,1)+1, "%d", &y) > 0) || // get vertical coordinate if no space between
+		   ((arguments->length == 3) && (sscanf((char*)vector_at(arguments,2), "%d", &y) > 0))) && // get vertical coordinate if space between
+		   ((unsigned int)y <= game->board->size) && y > 0) // check range
 		{
-			if(play_at(game, (unsigned char)(y-'a'), (unsigned int)x-1))
+			if(play_at(game, game->board->size-(unsigned int)y, (unsigned char)(x-'a'), strcmp(color, "white") == 0 ? WHITE : BLACK))
 			{
 				func_ptr = cmd_success;
 				func_args = "";
@@ -183,14 +183,21 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 	} else if(strcmp(command, "genmove") == 0) {
 		func_ptr = cmd_success;
 		func_args = "";
-		unsigned int y;
-		unsigned int x;
+		go_coordinate y;
+		go_coordinate x;
 		do
 		{
-			y = (unsigned int)rand() % game->board->size;
-			x = (unsigned int)rand() % game->board->size;
-		} while(!play_at(game, y, x));
+			y = (go_coordinate)rand() % game->board->size;
+			x = (go_coordinate)rand() % game->board->size;
+		} while(!play_at(game, y, x, NO_FIELD));
+	} else if(strcmp(command, "showboard") == 0) {
+		char* board = board_to_string(game->board);
 
+		free(command);
+		delete_vector(arguments, free);
+		char* tmp = cmd_success(board, id);
+		free(board);
+		return tmp;
 	}
 
 	free(command);

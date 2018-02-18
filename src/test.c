@@ -1,5 +1,5 @@
-#include "simple-go.h"
-#include "simple-gtp.h"
+#include <simple-go/simple-go.h>
+#include <simple-go/simple-gtp.h>
 
 void test1(void)
 {
@@ -44,16 +44,16 @@ void test2(void)
 	set_board_at(test_board, 2, 1, WHITE);
 	set_board_at(test_board, 1, 1, BLACK);
 
-	play_at(test_game, 2, 2);
+	play_at(test_game, 2, 2, NO_FIELD);
 	print_board(test_game->board);
 
 	set_board_at(test_board, 2, 1, EMPTY);
 
-	play_at(test_game, 2, 2);
+	play_at(test_game, 2, 2, NO_FIELD);
 	print_board(test_game->board);
 
 
-	play_at(test_game, 2, 1);
+	play_at(test_game, 2, 1, NO_FIELD);
 	print_board(test_game->board);
 
 	delete_game(test_game);
@@ -66,10 +66,14 @@ void test3(void)
 
 	game_state* test_game = create_game(11, 0);
 
-	char* ret =handle_gtp_cmd("play white a 10", test_game);
+	char* ret =handle_gtp_cmd("play white a 11", test_game);
 	printf("%s\n", ret);
 	free(ret);
 	print_board(test_game->board);
+
+	ret =handle_gtp_cmd("showboard", test_game);
+	printf("%s\n", ret);
+	free(ret);
 
 	ret =handle_gtp_cmd("version", test_game);
 	printf("%s\n", ret);
@@ -126,7 +130,7 @@ void test4(void)
 	set_board_at(test_board, 2, 5, WHITE);
 	set_board_at(test_board, 1, 4, WHITE);
 	set_board_at(test_board, 3, 4, BLACK);
-	play_at(test_game, 2,4);
+	play_at(test_game, 2,4, NO_FIELD);
 
 	print_board(test_game->board);
 
@@ -137,9 +141,17 @@ void test4(void)
 
 int main(int argc, char** argv)
 {
+	game_state* game = create_game(19, 0);
 	test1();
 	test2();
 	test3();
 	test4();
+	set_board_at(game->board, 2, 3, WHITE);
+	char* ret = handle_gtp_cmd("showboard", game);
+	printf("%s", ret);
+
+
+	free(ret);
+	delete_game(game);
 
 }

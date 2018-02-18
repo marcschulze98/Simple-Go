@@ -11,7 +11,7 @@
 #define WHITE 'w'
 #define EMPTY '.'
 #define GROUP '#'
-#define INVALID_FIELD '\0'
+#define NO_FIELD '\0'
 #define COUNTED '+'
 
 typedef unsigned int go_coordinate;
@@ -43,9 +43,10 @@ void set_board_at(go_board* board, go_coordinate y, go_coordinate x, char item);
 void kill_group(go_board* board, go_board* overlay);
 bool group_killable(game_state* game, go_coordinate y, go_coordinate x);
 bool group_attachable(const game_state* game, go_coordinate y, go_coordinate x);
-bool play_at(game_state* game, go_coordinate y, go_coordinate x);
+bool play_at(game_state* game, go_coordinate y, go_coordinate x, go_symbol color);
 
 void print_board(go_board* board);
+char* board_to_string(go_board* board);
 void find_group(const go_board* board, go_board* overlay, go_coordinate y, go_coordinate x);
 unsigned long count_liberties(go_board* board, go_board* overlay);
 

@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "simple-go.h"
-#include "cutils.h"
+#include <simple-go/simple-go.h>
+#include <cutils/cutils.h>
 
 char* handle_gtp_cmd(const char* msg, game_state* game);
 
