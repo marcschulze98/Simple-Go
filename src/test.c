@@ -138,20 +138,46 @@ void test4(void)
 	puts("test4 finished");
 }
 
+void test5(void)
+{
+	puts("test5 running");
+	game_state* game = create_game(19,0);
+	set_board_at(game->board, 2, 3, WHITE);
+	set_board_at(game->board, 2, 5, WHITE);
+	set_board_at(game->board, 1, 4, WHITE);
+	set_board_at(game->board, 3, 4, WHITE);
+
+	set_board_at(game->board, 5, 6, WHITE);
+	set_board_at(game->board, 5, 8, WHITE);
+	set_board_at(game->board, 4, 7, WHITE);
+	set_board_at(game->board, 6, 7, BLACK);
+
+	set_board_at(game->board, 5, 2, BLACK);
+	set_board_at(game->board, 5, 4, BLACK);
+	set_board_at(game->board, 4, 3, BLACK);
+	set_board_at(game->board, 6, 3, BLACK);
+
+	go_score* score = score_game(game);
+	print_board(game->board);
+	printf("White groups: %ld\n", score->white_groups->length);
+	printf("White points: %ld\n", score->white_points);
+	printf("Black groups: %ld\n", score->black_groups->length);
+	printf("Black points: %ld\n", score->black_points);
+
+
+	delete_score(score);
+	delete_game(game);
+	puts("test5 finished");
+}
+
 
 int main(int argc, char** argv)
 {
-	game_state* game = create_game(19, 0);
+
 	test1();
 	test2();
 	test3();
 	test4();
-	set_board_at(game->board, 2, 3, WHITE);
-	char* ret = handle_gtp_cmd("showboard", game);
-	printf("%s", ret);
-
-
-	free(ret);
-	delete_game(game);
+	test5();
 
 }

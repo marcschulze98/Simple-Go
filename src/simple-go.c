@@ -27,6 +27,8 @@ game_state* create_game(go_coordinate size, float komi)
 	game->board = create_board(size);
 	game->black_turn = true;
 	game->komi = komi;
+	game->white_captured = 0;
+	game->black_captured = 0;
 
 	return game;
 }
@@ -45,7 +47,7 @@ bool check_bounds(const go_board* board, go_coordinate y, go_coordinate x)
 		return false;
 }
 
-void kill_group(go_board* board, go_board* overlay)
+void kill_group(go_board* board, const go_board* overlay)
 {
 	for(go_coordinate y = 0; y < board->size; y++)
 	{
@@ -57,7 +59,7 @@ void kill_group(go_board* board, go_board* overlay)
 	}
 }
 
-void print_board(go_board* board)
+void print_board(const go_board* board)
 {
 	for(go_coordinate y = 0; y < board->size; y++)
 	{
@@ -70,7 +72,7 @@ void print_board(go_board* board)
 	}
 }
 
-char* board_to_string(go_board* board)
+char* board_to_string(const go_board* board)
 {
 	size_t str_size = (board->size*2+6)*(board->size+2)+2;
 	char* ret = calloc(str_size+1,1);
@@ -108,10 +110,7 @@ char* board_to_string(go_board* board)
 		ret[index++] = '\n';
 	}
 
-
-
 	return ret;
-
 }
 
 
@@ -238,7 +237,60 @@ void find_group(const go_board* board, go_board* overlay, go_coordinate y, go_co
 	}
 }
 
-unsigned long count_liberties(go_board* board, go_board* overlay)
+go_symbol group_belongs(const go_board* board, const go_board* overlay)
+{
+	assert(board->size == overlay->size);
+
+	go_symbol belongs = EMPTY;
+
+	for(go_coordinate y = 0; y < board->size; y++)
+	{
+		for(go_coordinate x = 0; x < board->size; x++)
+		{
+			if(get_board_at(overlay, y, x) == GROUP)
+			{
+				go_symbol up = get_board_at(board,y-1,x);
+				go_symbol left = get_board_at(board,y,x-1);
+				go_symbol down = get_board_at(board,y+1,x);
+				go_symbol right = get_board_at(board,y,x+1);
+
+				if(up == WHITE || up == BLACK)
+				{
+					belongs = (belongs == EMPTY) ? up : (up != belongs ? NO_FIELD : up);
+				}
+				if(left == WHITE || left == BLACK)
+				{
+					belongs = (belongs == EMPTY) ? left : (left != belongs ? NO_FIELD : left);
+				}
+				if(down == WHITE || down == BLACK)
+				{
+					belongs = (belongs == EMPTY) ? down : (down != belongs ? NO_FIELD : down);
+				}
+				if(right == WHITE || right == BLACK)
+				{
+					belongs = (belongs == EMPTY) ? right : (right != belongs ? NO_FIELD : right);
+				}
+			}
+		}
+	}
+	return belongs;
+}
+
+unsigned long group_size(go_board* group)
+{
+	unsigned long sum = 0;
+	for(go_coordinate y = 0; y < group->size; y++)
+	{
+		for(go_coordinate x = 0; x < group->size; x++)
+		{
+			if(get_board_at(group, y, x) == GROUP)
+				++sum;
+		}
+	}
+	return sum;
+}
+
+unsigned long count_liberties(const go_board* board, const go_board* overlay)
 {
 	assert(board->size == overlay->size);
 
@@ -281,6 +333,72 @@ unsigned long count_liberties(go_board* board, go_board* overlay)
 	delete_board(tmpoverlay);
 
 	return liberties;
+}
+
+go_score* score_game(const game_state* game)
+{
+	go_score* ret = malloc(sizeof(*ret));
+
+	ret->white_groups = new_vector();
+	ret->black_groups = new_vector();
+	ret->white_points = game->white_captured;
+	ret->black_points = game->black_captured;
+
+	go_board* board = game->board;
+	go_board* current;
+	go_symbol belongs;
+
+	for(go_coordinate y = 0; y < board->size; y++)
+	{
+		for(go_coordinate x = 0; x < board->size; x++)
+		{
+			//if field is empty
+			if(get_board_at(board, y, x) == EMPTY)
+			{
+				//check if field is already counted
+				for(go_coordinate i = 0; i < ret->white_groups->length; i++)
+				{
+					current = vector_at(ret->white_groups, i);
+					if(get_board_at(current, y, x) == GROUP)
+						continue;
+				}
+				for(go_coordinate i = 0; i < ret->black_groups->length; i++)
+				{
+					current = vector_at(ret->black_groups, i);
+					if(get_board_at(current, y, x) == GROUP)
+						continue;
+				}
+				go_board* overlay = create_board(board->size);
+				find_group(board, overlay, y, x);
+
+				//check if field belongs to a group
+				if((belongs = group_belongs(board, overlay)) == WHITE)
+				{
+					vector_push(ret->white_groups, overlay);
+					ret->white_points += group_size(overlay);
+				} else if(belongs == BLACK) {
+					vector_push(ret->black_groups, overlay);
+					ret->black_points += group_size(overlay);
+				} else {
+					delete_board(overlay);
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+void delete_board_wrapper(void* board)
+{
+	delete_board(board);
+}
+
+void delete_score(go_score* score)
+{
+	delete_vector(score->white_groups, delete_board_wrapper);
+	delete_vector(score->black_groups, delete_board_wrapper);
+	free(score);
 }
 
 

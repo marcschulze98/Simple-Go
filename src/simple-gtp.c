@@ -1,4 +1,5 @@
 #include <simple-go/simple-gtp.h>
+#include <simple-go/simple-gtp-func.h>
 
 typedef struct msg_formatted
 {
@@ -7,39 +8,6 @@ typedef struct msg_formatted
 	char* id;
 } msg_formatted;
 
-char* cmd_error(const char* msg, char* id)
-{
-	char* ret = malloc(strlen("? ") + strlen(msg) + (id ? strlen(id) : 0) + 3);
-	strcpy(ret, "?");
-	if(id)
-	{
-		strcat(ret, id);
-		free(id);
-	}
-	strcat(ret, " ");
-	strcat(ret, msg);
-	strcat(ret, "\n\n");
-	return ret;
-}
-
-char* cmd_success(const char* msg, char* id)
-{
-	char* ret = malloc(strlen("= ") + strlen(msg) + (id ? strlen(id) : 0) + 3);
-	strcpy(ret, "=");
-	if(id)
-	{
-		strcat(ret, id);
-		free(id);
-	}
-	strcat(ret, " ");
-	strcat(ret, msg);
-	strcat(ret, "\n\n");
-	return ret;
-}
-
-const char* const known_commands_string = "protocol_version\nname\nversion\nknown_command\nlist_commands\nquit\nboardsize\nclear_board\nkomi\nplay\ngenmove\nshowboard";
-const char* known_commands_array[] = {"protocol_version","name","version","known_command","list_commands","quit","boardsize","clear_board","komi","play","genmove","showboard"};
-int cmd_count = sizeof(known_commands_array)/sizeof(known_commands_array[0]);
 
 static msg_formatted format_msg(const char* msg)
 {
@@ -85,6 +53,27 @@ static msg_formatted format_msg(const char* msg)
 	return formatted;
 }
 
+static char* sanitize(const char* msg)
+{
+	char* ret = calloc(strlen(msg)+1, 1);
+
+	for(size_t i = 0, reti = 0; i < strlen(msg); i++)
+	{
+		if(msg[i] == '\t')
+		{
+			ret[reti++] = ' ';
+		} else if(iscntrl(msg[i])){
+			++reti;
+		} else if(msg[i] == '#'){
+			break;
+		} else {
+			ret[reti++] = msg[i];
+		}
+	}
+
+	return ret;
+}
+
 char* handle_gtp_cmd(const char* msg, game_state* game)
 {
 	if(!msg || !strlen(msg))
@@ -92,116 +81,47 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 		char* ret = calloc(1,1);
 		return ret;
 	}
+	char* msg_san = sanitize(msg);
 
-	msg_formatted formatted = format_msg(msg);
+	msg_formatted formatted = format_msg(msg_san);
 	char* command = formatted.command;
 	Vector* arguments = formatted.arguments;
 	char* id = formatted.id;
 
-	char* (*func_ptr)(const char*, char* id) = cmd_error;
-	const char* func_args = "unknown command";
+	char* ret;
+	char* (*func_ptr)(const Vector*, const char*, game_state*);
 
 	if(strcmp(command, "protocol_version") == 0)
 	{
-		func_ptr = cmd_success;
-		func_args = "2";
+		func_ptr = protocol_version_func;
 	} else if(strcmp(command, "name") == 0) {
-		func_ptr = cmd_success;
-		func_args = "simple-go";
+		func_ptr = name_func;
 	} else if(strcmp(command, "version") == 0) {
-		func_ptr = cmd_success;
-		func_args = "0.1";
+		func_ptr = version_func;
 	} else if(strcmp(command, "known_command") == 0) {
-		func_ptr = cmd_success;
-		func_args = "false";
-		for(int i = 0; i < cmd_count; i++)
-		{
-			if(arguments->length > 0 && strcmp(vector_at(arguments, 0), known_commands_array[i]) == 0)
-			{
-				func_args = "true";
-				break;
-			}
-		}
+		func_ptr = known_command_func;
 	} else if(strcmp(command, "list_commands") == 0) {
-		func_ptr = cmd_success;
-		func_args = known_commands_string;
+		func_ptr = list_commands_func;
 	} else if(strcmp(command, "boardsize") == 0) {
-		unsigned int size;
-		if(arguments->length == 1 && sscanf(vector_at(arguments,0), "%u", &size) > 0 && 0 < size && size < 26)
-		{
-			func_ptr = cmd_success;
-			func_args = "";
-			delete_board(game->board);
-			game->board = create_board(size);
-		} else {
-			func_ptr = cmd_error;
-			func_args = "unacceptable size";
-		}
+		func_ptr = boardsize_func;
 	} else if(strcmp(command, "komi") == 0) {
-		float komi;
-		if(arguments->length == 1 && sscanf(vector_at(arguments,0), "%f", &komi))
-		{
-			func_ptr = cmd_success;
-			func_args = "";
-			game->komi = komi;
-		} else {
-			func_ptr = cmd_error;
-			func_args = "komi not a float";
-		}
+		func_ptr = komi_func;
 	} else if(strcmp(command, "clear_board") == 0) {
-		func_ptr = cmd_success;
-		func_args = "";
-		unsigned int size = game->board->size;
-		delete_board(game->board);
-		game->board = create_board(size);
+		func_ptr = clear_board_func;
 	} else if(strcmp(command, "play") == 0) {
-		char* color = malloc(6);
-		char x;
-		int y;
-		if((arguments->length == 2 || arguments->length == 3) && //either its "a 10" or "a10"
-		   (snprintf(color, 6, "%s", (char*)vector_at(arguments,0)) > 0) && //"white" and "black" are only 6 chars
-		   (strcmp(color, "white") == 0 || strcmp(color, "black") == 0) && // check color
-		   (sscanf(vector_at(arguments,1), "%c", &x) > 0) && // get horizontal coordinate
-		   ((unsigned char)(tolower(x) - 'a') < game->board->size) && // check range
-		   ((sscanf((char*)vector_at(arguments,1)+1, "%d", &y) > 0) || // get vertical coordinate if no space between
-		   ((arguments->length == 3) && (sscanf((char*)vector_at(arguments,2), "%d", &y) > 0))) && // get vertical coordinate if space between
-		   ((unsigned int)y <= game->board->size) && y > 0) // check range
-		{
-			if(play_at(game, game->board->size-(unsigned int)y, (unsigned char)(x-'a'), strcmp(color, "white") == 0 ? WHITE : BLACK))
-			{
-				func_ptr = cmd_success;
-				func_args = "";
-			} else {
-				func_ptr = cmd_error;
-				func_args = "illegal move";
-			}
-		} else {
-			func_ptr = cmd_error;
-			func_args = "invalid color or coordinate";
-		}
-		free(color);
+		func_ptr = play_func;
 	} else if(strcmp(command, "genmove") == 0) {
-		func_ptr = cmd_success;
-		func_args = "";
-		go_coordinate y;
-		go_coordinate x;
-		do
-		{
-			y = (go_coordinate)rand() % game->board->size;
-			x = (go_coordinate)rand() % game->board->size;
-		} while(!play_at(game, y, x, NO_FIELD));
+		func_ptr = genmove_func;
 	} else if(strcmp(command, "showboard") == 0) {
-		char* board = board_to_string(game->board);
-
-		free(command);
-		delete_vector(arguments, free);
-		char* tmp = cmd_success(board, id);
-		free(board);
-		return tmp;
+		func_ptr = show_board_func;
 	}
 
+	ret = func_ptr(arguments, id, game);
+
 	free(command);
+	free(msg_san);
+	free(id);
 	delete_vector(arguments, free);
 
-	return func_ptr(func_args, id);
+	return ret;
 }
