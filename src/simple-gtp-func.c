@@ -172,12 +172,14 @@ char* show_board_func(const Vector* arguments, const char* id, game_state* game)
 char* final_score_func(const Vector* arguments, const char* id, game_state* game)
 {
 	go_score* score = score_game(game);
-	char* result = calloc(10,1);
+	char* result = calloc(20,1);
 
 	if(score->white_points > score->black_points)
-		sprintf(result,"%c%c%.1f", 'W', '+', score->white_points-score->black_points);
+		sprintf(result,"%c%c%.1lf", 'W', '+', score->white_points-score->black_points);
+	else if(score->black_points > score->white_points)
+		sprintf(result,"%c%c%.1lf", 'B', '+', score->black_points-score->white_points);
 	else
-		sprintf(result,"%c%c%.1f", 'B', '+', score->black_points-score->white_points);
+		sprintf(result,"0");
 
 	char* tmp = cmd_success(result, id);
 

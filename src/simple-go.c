@@ -360,14 +360,15 @@ go_score* score_game(const game_state* game)
 				{
 					current = vector_at(ret->white_groups, i);
 					if(get_board_at(current, y, x) == GROUP)
-						continue;
+						goto next_loop;
 				}
 				for(go_coordinate i = 0; i < ret->black_groups->length; i++)
 				{
 					current = vector_at(ret->black_groups, i);
 					if(get_board_at(current, y, x) == GROUP)
-						continue;
+						goto next_loop;
 				}
+
 				go_board* overlay = create_board(board->size);
 				find_group(board, overlay, y, x);
 
@@ -382,6 +383,7 @@ go_score* score_game(const game_state* game)
 				} else {
 					delete_board(overlay);
 				}
+			next_loop:;
 			}
 		}
 	}
