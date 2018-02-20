@@ -37,6 +37,11 @@ static char* cmd_success(const char* msg, const char* id)
 	return ret;
 }
 
+char* unkown_command_func(const Vector* arguments, const char* id, game_state* game)
+{
+	return cmd_error("unknown command", id);
+}
+
 char* protocol_version_func(const Vector* arguments, const char* id, game_state* game)
 {
 	return cmd_success("2", id);
@@ -166,5 +171,18 @@ char* show_board_func(const Vector* arguments, const char* id, game_state* game)
 
 char* final_score_func(const Vector* arguments, const char* id, game_state* game)
 {
-	return NULL;
+	go_score* score = score_game(game);
+	char* result = calloc(10,1);
+
+	if(score->white_points > score->black_points)
+		sprintf(result,"%c%c%.1f", 'W', '+', score->white_points-score->black_points);
+	else
+		sprintf(result,"%c%c%.1f", 'B', '+', score->black_points-score->white_points);
+
+	char* tmp = cmd_success(result, id);
+
+	free(result);
+	delete_score(score);
+
+	return tmp;
 }

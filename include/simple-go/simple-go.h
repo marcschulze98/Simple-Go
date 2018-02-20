@@ -27,9 +27,9 @@ typedef struct go_board
 typedef struct game_state
 {
 	go_board* board;
-	float komi;
-	unsigned long white_captured;
-	unsigned long black_captured;
+	double komi;
+	double white_captured;
+	double black_captured;
 	bool black_turn;
 } game_state;
 
@@ -37,8 +37,8 @@ typedef struct go_score
 {
 	Vector* white_groups;
 	Vector* black_groups;
-	unsigned long white_points;
-	unsigned long black_points;
+	double white_points;
+	double black_points;
 } go_score;
 
 
@@ -60,8 +60,8 @@ void print_board(const go_board* board);
 char* board_to_string(const go_board* board);
 void find_group(const go_board* board, go_board* overlay, go_coordinate y, go_coordinate x);
 go_symbol group_belongs(const go_board* board, const go_board* overlay);
-unsigned long count_liberties(const go_board* board, const go_board* overlay);
-unsigned long group_size(go_board* group);
+go_coordinate count_liberties(const go_board* board, const go_board* overlay);
+go_coordinate group_size(go_board* group);
 
 go_score* score_game(const game_state* board);
 void delete_score(go_score* score);

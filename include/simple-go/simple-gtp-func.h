@@ -11,6 +11,7 @@
 extern const char* const known_commands_string ;
 extern const char* known_commands_array[];
 
+char* unkown_command_func(const Vector* arguments, const char* id, game_state* game);
 char* protocol_version_func(const Vector* arguments, const char* id, game_state* game);
 char* name_func(const Vector* arguments, const char* id, game_state* game);
 char* version_func(const Vector* arguments, const char* id, game_state* game);

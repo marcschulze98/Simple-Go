@@ -22,7 +22,7 @@ void test1(void)
 
 	print_board(test_overlay);
 
-	printf("liberties: %ld\n", count_liberties(test_board,test_overlay));
+	printf("liberties: %d\n", count_liberties(test_board,test_overlay));
 
 	kill_group(test_board, test_overlay);
 
@@ -112,6 +112,10 @@ void test3(void)
 	printf("%s\n", ret);
 	free(ret);
 
+	ret =handle_gtp_cmd("final_score", test_game);
+	printf("%s\n", ret);
+	free(ret);
+
 	print_board(test_game->board);
 
 
@@ -160,9 +164,9 @@ void test5(void)
 	go_score* score = score_game(game);
 	print_board(game->board);
 	printf("White groups: %ld\n", score->white_groups->length);
-	printf("White points: %ld\n", score->white_points);
+	printf("White points: %lf\n", score->white_points);
 	printf("Black groups: %ld\n", score->black_groups->length);
-	printf("Black points: %ld\n", score->black_points);
+	printf("Black points: %lf\n", score->black_points);
 
 
 	delete_score(score);

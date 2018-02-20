@@ -276,9 +276,9 @@ go_symbol group_belongs(const go_board* board, const go_board* overlay)
 	return belongs;
 }
 
-unsigned long group_size(go_board* group)
+go_coordinate group_size(go_board* group)
 {
-	unsigned long sum = 0;
+	go_coordinate sum = 0;
 	for(go_coordinate y = 0; y < group->size; y++)
 	{
 		for(go_coordinate x = 0; x < group->size; x++)
@@ -290,14 +290,14 @@ unsigned long group_size(go_board* group)
 	return sum;
 }
 
-unsigned long count_liberties(const go_board* board, const go_board* overlay)
+go_coordinate count_liberties(const go_board* board, const go_board* overlay)
 {
 	assert(board->size == overlay->size);
 
 	go_board* tmpoverlay = create_board(board->size);
 	memcpy(tmpoverlay->field_array, overlay->field_array, board->size*board->size);
 
-	unsigned long liberties = 0;
+	go_coordinate liberties = 0;
 
 	for(go_coordinate y = 0; y < board->size; y++)
 	{
@@ -341,7 +341,7 @@ go_score* score_game(const game_state* game)
 
 	ret->white_groups = new_vector();
 	ret->black_groups = new_vector();
-	ret->white_points = game->white_captured;
+	ret->white_points = game->white_captured + game->komi;
 	ret->black_points = game->black_captured;
 
 	go_board* board = game->board;

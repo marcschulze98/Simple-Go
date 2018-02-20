@@ -89,7 +89,7 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 	char* id = formatted.id;
 
 	char* ret;
-	char* (*func_ptr)(const Vector*, const char*, game_state*);
+	char* (*func_ptr)(const Vector*, const char*, game_state*) = unkown_command_func;
 
 	if(strcmp(command, "protocol_version") == 0)
 	{
@@ -114,6 +114,8 @@ char* handle_gtp_cmd(const char* msg, game_state* game)
 		func_ptr = genmove_func;
 	} else if(strcmp(command, "showboard") == 0) {
 		func_ptr = show_board_func;
+	} else if(strcmp(command, "final_score") == 0) {
+		func_ptr = final_score_func;
 	}
 
 	ret = func_ptr(arguments, id, game);
