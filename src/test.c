@@ -1,7 +1,7 @@
 #include <simple-go/simple-go.h>
 #include <simple-go/simple-gtp.h>
 
-void test1(void)
+static void test1(void)
 {
 	puts("test1 running");
 	go_board* test_board = create_board(5);
@@ -33,7 +33,7 @@ void test1(void)
 	puts("test1 finished");
 }
 
-void test2(void)
+static void test2(void)
 {
 	puts("test2 running");
 	game_state* test_game = create_game(5, 0);
@@ -60,7 +60,7 @@ void test2(void)
 	puts("test2 finished");
 }
 
-void test3(void)
+static void test3(void)
 {
 	puts("test3 running");
 
@@ -124,7 +124,7 @@ void test3(void)
 	puts("test3 finished");
 }
 
-void test4(void)
+static void test4(void)
 {
 	puts("test4 running");
 
@@ -142,7 +142,7 @@ void test4(void)
 	puts("test4 finished");
 }
 
-void test5(void)
+static void test5(void)
 {
 	puts("test5 running");
 	game_state* game = create_game(19,0);
