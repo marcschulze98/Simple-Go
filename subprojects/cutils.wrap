@@ -1,0 +1,4 @@
+[wrap-git]
+directory=cutils
+url=https://github.com/marcschulze98/libcutils
+revision=head

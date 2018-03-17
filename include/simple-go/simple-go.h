@@ -15,7 +15,7 @@
 #define NO_FIELD '\0'
 #define COUNTED '+'
 
-typedef unsigned int go_coordinate;
+typedef size_t go_coordinate;
 typedef char go_symbol;
 
 typedef struct go_board
@@ -51,7 +51,7 @@ bool check_bounds(const go_board* board, go_coordinate y, go_coordinate x);
 char get_board_at(const go_board* board, go_coordinate y, go_coordinate x);
 void set_board_at(go_board* board, go_coordinate y, go_coordinate x, char item);
 
-void kill_group(go_board* board, const go_board* overlay);
+void kill_group(game_state* game, const go_board* overlay);
 bool group_killable(game_state* game, go_coordinate y, go_coordinate x);
 bool group_attachable(const game_state* game, go_coordinate y, go_coordinate x);
 bool play_at(game_state* game, go_coordinate y, go_coordinate x, go_symbol color);

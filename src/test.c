@@ -4,7 +4,8 @@
 static void test1(void)
 {
 	puts("test1 running");
-	go_board* test_board = create_board(5);
+	game_state* test_game = create_game(5, 6.5);
+	go_board* test_board = test_game->board;
 
 	set_board_at(test_board, 2, 2, WHITE);
 	set_board_at(test_board, 2, 3, WHITE);
@@ -22,13 +23,13 @@ static void test1(void)
 
 	print_board(test_overlay);
 
-	printf("liberties: %d\n", count_liberties(test_board,test_overlay));
+	printf("liberties: %ld\n", count_liberties(test_board,test_overlay));
 
-	kill_group(test_board, test_overlay);
+	kill_group(test_game, test_overlay);
 
 	print_board(test_board);
 
-	delete_board(test_board);
+	delete_game(test_game);
 	delete_board(test_overlay);
 	puts("test1 finished");
 }

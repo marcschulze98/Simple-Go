@@ -47,14 +47,21 @@ bool check_bounds(const go_board* board, go_coordinate y, go_coordinate x)
 		return false;
 }
 
-void kill_group(go_board* board, const go_board* overlay)
+void kill_group(game_state* game, const go_board* overlay)
 {
+	go_board* board = game->board;
+	double* captured = NULL;
 	for(go_coordinate y = 0; y < board->size; y++)
 	{
 		for(go_coordinate x = 0; x < board->size; x++)
 		{
 			if(get_board_at(overlay, y, x) == GROUP)
+			{
+				if(!captured)
+					captured = get_board_at(board, y, x) == BLACK ? &game->white_captured : &game->black_captured;
 				set_board_at(board, y, x, EMPTY);
+				(*captured)++;
+			}
 		}
 	}
 }
@@ -134,7 +141,7 @@ bool group_killable(game_state* game, go_coordinate y, go_coordinate x)
 	find_group(game->board, enemy_group, y, x);
 	if(count_liberties(game->board, enemy_group) <= 1)
 	{
-		kill_group(game->board, enemy_group);
+		kill_group(game, enemy_group);
 		delete_board(enemy_group);
 		return true;
 	} else {
@@ -376,10 +383,10 @@ go_score* score_game(const game_state* game)
 				if((belongs = group_belongs(board, overlay)) == WHITE)
 				{
 					vector_push(ret->white_groups, overlay);
-					ret->white_points += group_size(overlay);
+					ret->white_points += (double)group_size(overlay);
 				} else if(belongs == BLACK) {
 					vector_push(ret->black_groups, overlay);
-					ret->black_points += group_size(overlay);
+					ret->black_points += (double)group_size(overlay);
 				} else {
 					delete_board(overlay);
 				}

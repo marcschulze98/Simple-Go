@@ -1,7 +1,7 @@
 #include <simple-go/simple-gtp-func.h>
 
-const char* const known_commands_string = "protocol_version\nname\nversion\nknown_command\nlist_commands\nquit\nboardsize\nclear_board\nkomi\nplay\ngenmove\nshowboard";
-const char* known_commands_array[] = {"protocol_version","name","version","known_command","list_commands","quit","boardsize","clear_board","komi","play","genmove","showboard", NULL};
+const char* const known_commands_string = "protocol_version\nname\nversion\nknown_command\nlist_commands\nquit\nboardsize\nclear_board\nkomi\nplay\ngenmove\nshowboard\nfinal_score";
+const char* known_commands_array[] = {"protocol_version","name","version","known_command","list_commands","quit","boardsize","clear_board","komi","play","genmove","showboard", "final_score", NULL};
 
 static char* cmd_error(const char* msg, const char* id)
 {
@@ -101,7 +101,7 @@ char* komi_func(const Vector* arguments, const char* id, game_state* game)
 
 char* clear_board_func(const Vector* arguments, const char* id, game_state* game)
 {
-	unsigned int size = game->board->size;
+	go_coordinate size = game->board->size;
 	delete_board(game->board);
 	game->board = create_board(size);
 	return cmd_success(NULL, id);
@@ -110,32 +110,42 @@ char* clear_board_func(const Vector* arguments, const char* id, game_state* game
 char* play_func(const Vector* arguments, const char* id, game_state* game)
 {
 	char* color = malloc(6);
-	char x;
-	int y;
-	if((arguments->length == 2 || arguments->length == 3) && //either its "a 10" or "a10"
-	   (snprintf(color, 6, "%s", (char*)vector_at(arguments,0)) > 0) && //"white" and "black" are only 6 chars
-	   (strcmp(color, "white") == 0 || strcmp(color, "black") == 0 ||
-	   strcmp(color, "w") == 0 || strcmp(color, "b") == 0) && // check color
-	   (sscanf(vector_at(arguments,1), "%c", &x) > 0) && // get horizontal coordinate
-	   ((unsigned char)(tolower(x) - 'a') < game->board->size) && // check range
-	   ((sscanf((char*)vector_at(arguments,1)+1, "%d", &y) > 0) || // get vertical coordinate if no space between
-	   ((arguments->length == 3) && (sscanf((char*)vector_at(arguments,2), "%d", &y) > 0))) && // get vertical coordinate if space between
-	   ((unsigned int)y <= game->board->size) && y > 0) // check range
-	{
+	char xchar;
+	size_t x;
+	size_t y;
 
-		if(play_at(game, game->board->size-(unsigned int)y, (unsigned char)(x-'a'), (strcmp(color, "white") == 0 || strcmp(color, "w") == 0) ? WHITE : BLACK))
-		{
-			free(color);
-			return cmd_success(NULL, id);
-		} else {
-			free(color);
-			return cmd_error("illegal move", id);
-		}
+	if(!(arguments->length == 2 || arguments->length == 3)) //allow "a 10" or "a10"
+		goto error;
+	if(snprintf(color, 6, "%s", (char*)vector_at(arguments,0)) <= 0) //"white" and "black" are only 6 chars
+		goto error;
+	if(!(strcmp_nocase(color, "white") == 0 || strcmp_nocase(color, "black") == 0 || // check color
+	   strcmp_nocase(color, "w") == 0 || strcmp_nocase(color, "b") == 0))
+		goto error;
+	if(sscanf(vector_at(arguments,1), "%c", &xchar) <= 0) // get horizontal coordinate
+		goto error;
+
+	x = (size_t)tolower(xchar) - 'a';
+	x = x >= 9 ? x-1 : x; //skip J
+	if((x < 'i' && x >= game->board->size) || (x > 'i' && x-1 >= game->board->size)) // check range
+		goto error;
+	if(!((arguments->length == 2) && (sscanf((char*)vector_at(arguments,1)+1, "%zu", &y) > 0)) && // get vertical coordinate if no space between
+	   !((arguments->length == 3) && (sscanf((char*)vector_at(arguments,2), "%zu", &y) > 0)))     // get vertical coordinate if space between
+		goto error;
+	if(y > game->board->size)
+		goto error;
+
+	if(play_at(game, game->board->size-y, x, (strcmp(color, "white") == 0 || strcmp(color, "w") == 0) ? WHITE : BLACK))
+	{
+		free(color);
+		return cmd_success(NULL, id);
 	} else {
 		free(color);
-		return cmd_error("invalid color or coordinate", id);
+		return cmd_error("illegal move", id);
 	}
 
+error:
+	free(color);
+	return cmd_error("invalid color or coordinate", id);
 }
 
 char* genmove_func(const Vector* arguments, const char* id, game_state* game)
