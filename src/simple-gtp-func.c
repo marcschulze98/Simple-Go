@@ -54,7 +54,7 @@ char* name_func(const Vector* arguments, const char* id, game_state* game)
 
 char* version_func(const Vector* arguments, const char* id, game_state* game)
 {
-	return cmd_success("0.1", id);
+	return cmd_success(VERSIONSTR, id);
 }
 
 char* known_command_func(const Vector* arguments, const char* id, game_state* game)

@@ -15,6 +15,8 @@
 #define NO_FIELD '\0'
 #define COUNTED '+'
 
+#define VERSIONSTR "1.1"
+
 typedef size_t go_coordinate;
 typedef char go_symbol;
 
